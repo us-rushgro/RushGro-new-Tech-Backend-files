@@ -1367,17 +1367,15 @@ app.include_router(api2)
 cors_origins = os.environ.get("CORS_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-<<<<<<< HEAD
+
     allow_origins=[
         "http://localhost:3000",
         "https://rushgro.com",
         "https://www.rushgro.com"
     ],
     allow_credentials=True,
-=======
     allow_origins=cors_origins if cors_origins != ["*"] else ["*"],
     allow_credentials=True if cors_origins != ["*"] else False,
->>>>>>> 44609dc27a2cba9e555700853b69d60983a7439f
     allow_methods=["*"],
     allow_headers=["*"],
 )
