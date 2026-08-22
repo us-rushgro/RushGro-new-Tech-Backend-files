@@ -1374,7 +1374,6 @@ app.add_middleware(
         "https://www.rushgro.com"
     ],
     allow_credentials=True,
-    allow_credentials=True if cors_origins != ["*"] else False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
