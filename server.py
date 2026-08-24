@@ -98,7 +98,8 @@ async def get_current_user(request: Request) -> dict:
         return user
     except jwt_expired_error():
         raise HTTPException(status_code=401, detail="Token expired")
-    except Exception:
+    except Exception as e:
+        log.exception("JWT authentication failed: %s", e)
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
@@ -114,10 +115,28 @@ def require_role(*roles: str):
         return user
     return _dep
 
-
 def set_auth_cookies(response: Response, access: str, refresh: str):
-    response.set_cookie("access_token", access, httponly=True, secure=False, samesite="lax", max_age=8 * 3600, path="/")
-    response.set_cookie("refresh_token", refresh, httponly=True, secure=False, samesite="lax", max_age=7 * 86400, path="/")
+    response.set_cookie(
+        "access_token",
+        access,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=8 * 3600,
+        path="/",
+    )
+    response.set_cookie(
+        "refresh_token",
+        refresh,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7 * 86400,
+        path="/",
+    )
+# def set_auth_cookies(response: Response, access: str, refresh: str):
+#     response.set_cookie("access_token", access, httponly=True, secure=True, samesite="none", max_age=8 * 3600, path="/")
+#     response.set_cookie("refresh_token", refresh, httponly=True, secure=False, samesite="lax", max_age=7 * 86400, path="/")
 
 
 # ---------- AUTH ROUTES ----------
@@ -256,8 +275,19 @@ async def refresh(request: Request, response: Response):
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         access = create_access_token(user["id"], user["email"], user["role"])
-        response.set_cookie("access_token", access, httponly=True, secure=False, samesite="lax", max_age=8 * 3600, path="/")
+        # response.set_cookie("access_token", access, httponly=True, secure=False, samesite="lax", max_age=8 * 3600, path="/")
+        response.set_cookie(
+    "access_token",
+    access,
+    httponly=True,
+    secure=True,
+    samesite="none",
+    max_age=8 * 3600,
+    path="/",
+)
         return {"ok": True}
+    # except Exception:
+    #     raise HTTPException(status_code=401, detail="Invalid refresh token")
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
@@ -1364,15 +1394,16 @@ api2.include_router(iot_router)
 app.include_router(api2)
 
 # CORS
-cors_origins = os.environ.get("CORS_ORIGINS", "*").split(",")
+cors_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://rushgro.com",
+    "https://www.rushgro.com",
+]
+
 app.add_middleware(
     CORSMiddleware,
-
-    allow_origins=[
-        "http://localhost:3000",
-        "https://rushgro.com",
-        "https://www.rushgro.com"
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
